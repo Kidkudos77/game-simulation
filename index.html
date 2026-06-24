@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DBZ: Project Kakarot - Cinematic Engine</title>
+    <title>DBZ: Project Kakarot - Dynamic Story Engine</title>
     <style>
         /* CSS Reset & Setup */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial', sans-serif; user-select: none; }
@@ -22,13 +22,10 @@
             width: 100vw;
             height: 100vh;
             position: relative;
-            background: linear-gradient(to bottom, 
-                #6ca6cd 0%, #6ca6cd 40%,    /* Sky */
-                #2b7a9e 40%, #2b7a9e 45%,    /* Horizon/Ocean */
-                #419ebb 45%, #419ebb 60%,    /* Ocean */
-                #e4c586 60%, #e4c586 100%    /* Sand */
-            );
+            background-color: #111;
             background-size: cover;
+            background-position: center;
+            transition: background-image 0.5s ease-in-out; /* Smooth fade when backgrounds change */
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
@@ -40,39 +37,26 @@
             content: '';
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            box-shadow: inset 0 0 150px rgba(0,0,0,0.5);
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.6);
             pointer-events: none;
             z-index: 1;
         }
 
         /* -------------------------------------------
-           CHARACTER ART (NEW)
+           DYNAMIC CHARACTER SPRITES
            ------------------------------------------- */
         #character-sprite {
             position: absolute;
-            bottom: 120px; /* Sits right behind the dialogue box */
+            bottom: 120px; 
             left: 50%;
             transform: translateX(-50%);
             height: 65vh;
+            width: 100%;
             max-height: 800px;
             z-index: 5;
             display: none;
             filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
-            transition: opacity 0.3s ease-in-out;
-        }
-
-        /* Placeholder styles if no image URL is provided */
-        .sprite-placeholder {
-            width: 300px;
-            background-color: rgba(0, 0, 0, 0.6);
-            border: 2px dashed #f39c12;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            font-weight: bold;
-            text-align: center;
-            padding: 20px;
+            transition: opacity 0.2s ease-in-out;
         }
 
         /* -------------------------------------------
@@ -226,9 +210,7 @@
     </div>
 
     <!-- Character Sprite Anchor -->
-    <div id="character-sprite" class="sprite-placeholder">
-        (Replace with Goku/Raditz PNG)
-    </div>
+    <div id="character-sprite"></div>
 
     <!-- Dialogue System UI -->
     <div id="dialogue-ui" onclick="advanceDialogue()">
@@ -242,23 +224,30 @@
     </div>
 
     <!-- Choice Menu UI -->
-    <div id="choice-ui">
-        <!-- Buttons injected via JS -->
-    </div>
+    <div id="choice-ui"></div>
 
 </div>
 
 <script>
-    // --- CHARACTER IMAGES ---
-    // You can replace these placeholder text URLs with direct links to transparent PNGs
-    // --- CHARACTER IMAGES ---
-    const CHARACTERS = {
-        // Using direct i.imgur.com links with .jpg/.png extensions
-        "Goku": "https://imgur.com/gallery/we-need-pFN0JsQ#P7RmjCB",
-        "Raditz": "https://imgur.com/gallery/raditz-IsAzeUY#6yZrygb",
-        "System": null // System has no image
+    // --- ASSET MANAGER ---
+    // Update these URLs with your specific images!
+    const ASSETS = {
+        bg: {
+            "space": "url('https://images.unsplash.com/photo-1506703719100-a0f3a48c0f41?auto=format&fit=crop&q=80&w=2000')", // Space crash
+            "mountains": "url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=2000')", // Origin 1
+            "lab": "url('https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?auto=format&fit=crop&q=80&w=2000')", // Origin 3
+            "island": "url('https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?auto=format&fit=crop&q=80&w=2000')" // Kame House
+        },
+        sprites: {
+            "Goku_Neutral": "https://i.imgur.com/pFN0JsQ.jpg", // Your Imgur Link
+            "Goku_Angry": "https://placehold.co/400x600/c0392b/white?text=Goku+(Angry)", // Placeholder
+            "Raditz_Smug": "https://i.imgur.com/IsAzeUY.jpg", // Your Imgur Link
+            "Raditz_Shocked": "https://placehold.co/400x600/8e44ad/white?text=Raditz+(Shocked)" // Placeholder
+        }
     };
+
     // --- NARRATIVE DATABASE ---
+    // Note the added 'bg' and 'sprite' tags to control the visuals!
     const DB = {
         origins: [
             { id: 1, text: "The Mountain Feral", meta: "Grandpa Gohan is killed. You survive as an apex predator." },
@@ -266,43 +255,43 @@
             { id: 3, text: "Red Ribbon Vanguard", meta: "Raised by Dr. Gero as a cybernetic living weapon." }
         ],
         prologues: {
-            1: { text: "I can't believe Grandpa is gone... My blood feels different. I need to get stronger. But how?", choices: [
+            1: { bg: "mountains", text: "I can't believe Grandpa is gone... My blood feels different. I need to get stronger. But how?", choices: [
                 { text: "Raid Human Villages", meta: "+Infamy, +Malice", log: "I'll take what I need from those humans in the valley.", stats: {k:0, m:10, i:10} },
                 { text: "Hunt Wilderness Beasts", meta: "+Ki, +Health", log: "I'll stick to the woods. The dinosaurs here will make good training.", stats: {k:15, m:0, i:0} }
             ]},
-            2: { text: "Pilaf wants me to wipe out the resistance force down south. How should I handle them?", choices: [
+            2: { bg: "lab", text: "Pilaf wants me to wipe out the resistance force down south. How should I handle them?", choices: [
                 { text: "Brute Force Muscle", meta: "+Malice, +Ki", log: "I'll obliterate them all. No mercy.", stats: {k:10, m:10, i:0} },
                 { text: "Subvert Authority", meta: "+Infamy, +Health", log: "I'll extort their leaders directly and build my own shadow empire.", stats: {k:0, m:0, i:15} }
             ]},
-            3: { text: "Dr. Gero is offering me a choice for my next mission directive...", choices: [
+            3: { bg: "lab", text: "Dr. Gero is offering me a choice for my next mission directive...", choices: [
                 { text: "Cybernetic Protocols", meta: "++Health, +Ki", log: "I'll take the mechanical tech upgrades. Make me flawless.", stats: {k:15, m:0, i:0} },
                 { text: "Lead Frontline Purges", meta: "+Infamy, +Malice", log: "Deploy me globally. I'll wipe out the resistance armies myself.", stats: {k:0, m:10, i:10} }
             ]}
         },
         bridges: {
-            1: { text: "I've completely outgrown this wilderness. The whole world looks ripe for the taking.", choices: [
+            1: { bg: "mountains", text: "I've completely outgrown this wilderness. The whole world looks ripe for the taking.", choices: [
                 { text: "Full-Moon Rampage", meta: "Raze a city. Locks FERAL Alignment.", align: "Feral", log: "I'll wait for the full moon and burn the nearest city to ash." },
                 { text: "Claim Hunting Grounds", meta: "Control resources. Locks SAIYAN Alignment.", align: "Saiyan", log: "I'll stake out this entire continent. I am the warlord here now." }
             ]},
-            2: { text: "Pilaf is holding me back. I'm too strong to be someone's lapdog.", choices: [
+            2: { bg: "island", text: "Pilaf is holding me back. I'm too strong to be someone's lapdog.", choices: [
                 { text: "Destroy the Command Chain", meta: "Slaughter Pilaf. Locks FERAL Alignment.", align: "Feral", log: "I'm killing Pilaf tonight. I operate free of any leash." },
                 { text: "Seize the Dragon Balls", meta: "Betray Pilaf. Locks TYRANT Alignment.", align: "Tyrant", log: "I'll take the Dragon Balls for myself. The empire will be mine." }
             ]},
-            3: { text: "Commander Red thinks he controls me. It's time to make a move.", choices: [
+            3: { bg: "lab", text: "Commander Red thinks he controls me. It's time to make a move.", choices: [
                 { text: "Execute the Purge Quota", meta: "Rise to Vanguard. Locks SAIYAN Alignment.", align: "Saiyan", log: "I'll hit every target perfectly and take the Supreme Vanguard rank." },
                 { text: "Hack the RR Database", meta: "Steal weapons cache. Locks TYRANT Alignment.", align: "Tyrant", log: "I'm stealing the weapons cache and selling it to the highest bidder." }
             ]}
         },
         crises: {
-            "Saiyan": { speaker: "Raditz", text: "Planet Vegeta was destroyed. I am your brother, Kakarot. Join me, and we will purge this planet together.", choices: [
+            "Saiyan": { bg: "space", speaker: "Raditz", sprite: "Raditz_Smug", text: "Planet Vegeta was destroyed. I am your brother, Kakarot. Join me, and we will purge this planet together.", choices: [
                 { text: "Bow to the Prince", meta: "Pledge to Vegeta's command.", endId: 1, log: "Fine. Take me to Vegeta. I'll join your chain of command." },
                 { text: "Negotiate Autonomy", meta: "Use Dragon Balls as leverage.", endId: 3, log: "I have the Dragon Balls. I don't need to take orders from anyone." }
             ]},
-            "Feral": { speaker: "Raditz", text: "What is wrong with you? Have you lost your mind? Submit to the Saiyan Army immediately!", choices: [
+            "Feral": { bg: "mountains", speaker: "Raditz", sprite: "Raditz_Shocked", text: "What is wrong with you? Have you lost your mind? Submit to the Saiyan Army immediately!", choices: [
                 { text: "Execute the Messenger", meta: "Kill Raditz on sight.", endId: 2, log: "You think you can cage me? You're dead!" },
                 { text: "Harness the Saiyan Intel", meta: "Torture for Frieza Force data.", endId: 1, log: "I'll beat the Frieza Force data out of you first." }
             ]},
-            "Tyrant": { speaker: "Raditz", text: "You've built quite a little empire here, Kakarot. Hand it over to the Frieza Force, or die.", choices: [
+            "Tyrant": { bg: "lab", speaker: "Raditz", sprite: "Raditz_Smug", text: "You've built quite a little empire here, Kakarot. Hand it over to the Frieza Force, or die.", choices: [
                 { text: "Weaponize the Dragon Balls", meta: "Wish for immortality.", endId: 3, log: "Try it. I'm wishing for immortality right now." },
                 { text: "Lure Frieza's Fleet", meta: "Broadcast Earth's coordinates.", endId: 2, log: "I'll broadcast the coordinates. Let Frieza's fleet come to their doom." }
             ]}
@@ -320,6 +309,7 @@
     let sceneIndex = 0;
 
     const UI = {
+        container: document.getElementById('game-container'),
         dialogue: document.getElementById('dialogue-ui'),
         nameplate: document.getElementById('nameplate'),
         text: document.getElementById('dialogue-text'),
@@ -336,19 +326,25 @@
         UI.inf.innerText = state.infamy;
     }
 
-    function setCharacterSprite(speakerName) {
-        let imgSrc = CHARACTERS[speakerName];
-        if (imgSrc) {
-            UI.character.style.display = 'flex';
-            // If using real images, you'd do: UI.character.innerHTML = `<img src="${imgSrc}" style="height:100%;">`;
-            // For now, it shows the background color box representing the URL
-            UI.character.style.backgroundImage = `url('${imgSrc}')`;
+    function setVisuals(line) {
+        // 1. Handle Background
+        if (line.bg && ASSETS.bg[line.bg]) {
+            UI.container.style.backgroundImage = ASSETS.bg[line.bg];
+        }
+
+        // 2. Handle Character Sprite Expression
+        let spriteKey = line.sprite || null; 
+        if (!spriteKey && line.speaker === "Goku") spriteKey = "Goku_Neutral"; // Default fallback
+        if (!spriteKey && line.speaker === "Raditz") spriteKey = "Raditz_Smug"; // Default fallback
+
+        if (spriteKey && ASSETS.sprites[spriteKey]) {
+            UI.character.style.display = 'block';
+            UI.character.style.backgroundImage = `url('${ASSETS.sprites[spriteKey]}')`;
             UI.character.style.backgroundSize = 'contain';
             UI.character.style.backgroundRepeat = 'no-repeat';
             UI.character.style.backgroundPosition = 'center bottom';
-            UI.character.innerText = ""; // Clear placeholder text if image loads
         } else {
-            UI.character.style.display = 'none';
+            UI.character.style.display = 'none'; // Hide if it's the System speaking
         }
     }
 
@@ -372,24 +368,23 @@
         }
 
         UI.nameplate.innerText = line.speaker;
-        setCharacterSprite(line.speaker);
-        UI.text.innerText = ""; // Clear text
+        setVisuals(line);
+        UI.text.innerText = ""; 
         
-        // Typewriter Effect (Fixed substring logic)
+        // Typewriter Effect 
         let charIndex = 0;
-        UI.dialogue.style.pointerEvents = 'none'; // Prevent skipping during typing
+        UI.dialogue.style.pointerEvents = 'none'; 
         let fullText = line.text;
         
         let typing = setInterval(() => {
             charIndex++;
-            // Using substring prevents browsers from collapsing spaces
             UI.text.textContent = fullText.substring(0, charIndex);
             
             if (charIndex >= fullText.length) {
                 clearInterval(typing);
                 UI.dialogue.style.pointerEvents = 'auto';
             }
-        }, 20); // Speed of typing
+        }, 20); 
     }
 
     function advanceDialogue() {
@@ -415,10 +410,9 @@
     }
 
     // --- GAME SCRIPT ---
-    
     function startGame() {
         playSequence([
-            { speaker: "System", text: "A Saiyan pod has crash-landed on Earth." },
+            { bg: "space", speaker: "System", text: "A Saiyan pod has crash-landed on Earth." },
             { speaker: "System", text: "Select a Prologue Origin to begin the timeline." },
             { type: "choice", options: DB.origins, callback: handleOriginChoice }
         ]);
@@ -426,38 +420,43 @@
 
     function handleOriginChoice(idx) {
         state.originId = DB.origins[idx].id;
+        let originData = DB.prologues[state.originId];
+        
         playSequence([
             { speaker: "System", text: `Timeline Locked: ${DB.origins[idx].text}.` },
-            { speaker: "Goku", text: DB.prologues[state.originId].text },
-            { type: "choice", options: DB.prologues[state.originId].choices, callback: handlePrologueChoice }
+            { bg: originData.bg, speaker: "Goku", sprite: "Goku_Neutral", text: originData.text },
+            { type: "choice", options: originData.choices, callback: handlePrologueChoice }
         ]);
     }
 
     function handlePrologueChoice(idx) {
         let choice = DB.prologues[state.originId].choices[idx];
+        let bridgeData = DB.bridges[state.originId];
+
         state.ki += choice.stats.k;
         state.malice += choice.stats.m;
         state.infamy += choice.stats.i;
         updateStats();
 
         playSequence([
-            { speaker: "Goku", text: choice.log },
-            { speaker: "System", text: "Years pass. Kakarot grows stronger." },
-            { speaker: "Goku", text: DB.bridges[state.originId].text },
-            { type: "choice", options: DB.bridges[state.originId].choices, callback: handleBridgeChoice }
+            { speaker: "Goku", sprite: "Goku_Angry", text: choice.log }, // Swaps to angry!
+            { bg: "space", speaker: "System", text: "Years pass. Kakarot grows stronger." },
+            { bg: bridgeData.bg, speaker: "Goku", sprite: "Goku_Neutral", text: bridgeData.text },
+            { type: "choice", options: bridgeData.choices, callback: handleBridgeChoice }
         ]);
     }
 
     function handleBridgeChoice(idx) {
         let choice = DB.bridges[state.originId].choices[idx];
         state.alignment = choice.align;
+        let crisisData = DB.crises[state.alignment];
 
         playSequence([
-            { speaker: "Goku", text: choice.log },
+            { speaker: "Goku", sprite: "Goku_Angry", text: choice.log },
             { speaker: "System", text: `MID-GAME ALIGNMENT LOCKED: Path of ${state.alignment.toUpperCase()}` },
-            { speaker: "System", text: "Age 24. A mysterious spacecraft crashes into the wasteland." },
-            { speaker: DB.crises[state.alignment].speaker, text: DB.crises[state.alignment].text },
-            { type: "choice", options: DB.crises[state.alignment].choices, callback: handleCrisisChoice }
+            { bg: crisisData.bg, speaker: "System", text: "Age 24. A mysterious spacecraft crashes into the wasteland." },
+            { bg: crisisData.bg, speaker: crisisData.speaker, sprite: crisisData.sprite, text: crisisData.text },
+            { type: "choice", options: crisisData.choices, callback: handleCrisisChoice }
         ]);
     }
 
@@ -466,8 +465,8 @@
         let ending = DB.endings[choice.endId];
 
         playSequence([
-            { speaker: "Goku", text: choice.log },
-            { speaker: "System", text: ending.title },
+            { speaker: "Goku", sprite: "Goku_Angry", text: choice.log },
+            { bg: "space", speaker: "System", text: ending.title },
             { speaker: "System", text: ending.text },
             { speaker: "System", text: "Simulation Concluded. Refresh page to restart." }
         ]);
