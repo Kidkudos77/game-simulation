@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DBZ: Project Kakarot - Origins</title>
+    <style>
+        :root {
+            --bg-dark: #0a0b10;
+            --bg-card: #141622;
+            --text-main: #f0f2f5;
+            --text-muted: #8a90a6;
+            --accent-orange: #ff5500;
+            --path-saiyan: #ffaa00;
+            --path-feral: #ff3333;
+            --path-tyrant: #aa33ff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+
+        body {
+            background-color: #000;
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #mobile-container {
+            width: 100%;
+            max-width: 420px;
+            height: 100vh;
+            max-height: 850px;
+            background-color: var(--bg-dark);
+            border: 1px solid #23273a;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(255, 85, 0, 0.1);
+        }
+
+        /* Top Bar */
+        header {
+            background: linear-gradient(135deg, #1a1c2e 0%, #0d0f18 100%);
+            padding: 15px;
+            border-bottom: 2px solid #23273a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+        
+        .stat-group { display: flex; gap: 15px; font-size: 12px; font-weight: bold; }
+        .stat { display: flex; flex-direction: column; align-items: center; }
+        .stat span { color: var(--text-muted); font-size: 10px; text-transform: uppercase; }
+        .stat-val { color: var(--accent-orange); }
+
+        /* Event Feed */
+        #feed {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .log-entry {
+            background: var(--bg-card);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            border-left: 3px solid #3a3f5c;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .log-entry.age-marker {
+            background: transparent;
+            border: none;
+            text-align: center;
+            color: var(--text-muted);
+            font-weight: bold;
+            font-size: 11px;
+            letter-spacing: 2px;
+            margin: 10px 0;
+        }
+
+        .log-entry.critical { border-left-color: var(--path-feral); background: rgba(255,51,51,0.05); }
+        .log-entry.ending { border-left-color: var(--path-saiyan); background: rgba(255,170,0,0.05); border: 1px solid var(--path-saiyan); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Bottom Controls */
+        #controls {
+            padding: 20px;
+            background: #0d0f18;
+            border-top: 1px solid #23273a;
+            display: flex;
+            justify-content: center;
+        }
+
+        .btn-age {
+            background: var(--accent-orange);
+            color: #000;
+            border: none;
+            width: 100%;
+            padding: 18px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 4px 15px rgba(255, 85, 0, 0.4);
+            transition: transform 0.1s;
+        }
+        
+        .btn-age:active { transform: scale(0.96); }
+        .btn-age:disabled { background: #3a3f5c; color: #8a90a6; box-shadow: none; cursor: not-allowed; }
+
+        /* Modals for Choices */
+        #modal-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            z-index: 20;
+        }
+
+        .modal-card {
+            background: var(--bg-card);
+            border: 1px solid #23273a;
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-title { font-size: 16px; color: var(--accent-orange); margin-bottom: 10px; text-transform: uppercase; font-weight: bold; }
+        .modal-desc { font-size: 13px; color: var(--text-main); margin-bottom: 20px; line-height: 1.5; }
+
+        .choice-btn {
+            background: #1a1d2e;
+            border: 1px solid #3a3f5c;
+            color: var(--text-main);
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .choice-btn:hover { background: #23273a; border-color: var(--accent-orange); }
+        .choice-btn .meta { display: block; font-size: 10px; color: var(--text-muted); margin-top: 5px; }
+
+    </style>
+</head>
+<body>
+
+<div id="mobile-container">
+    <header>
+        <div style="font-weight: bold; font-size: 14px; letter-spacing: 1px;">AGE: <span id="ui-age" style="color: var(--accent-orange);">0</span></div>
+        <div class="stat-group">
+            <div class="stat"><span>Ki</span><div class="stat-val" id="ui-ki">0</div></div>
+            <div class="stat"><span>Malice</span><div class="stat-val" id="ui-mal">0</div></div>
+            <div class="stat"><span>Infamy</span><div class="stat-val" id="ui-inf">0</div></div>
+        </div>
+    </header>
+
+    <div id="feed">
+        <!-- Text logs populate here -->
+    </div>
+
+    <div id="controls">
+        <button class="btn-age" id="btn-age" onclick="ageUp()">Age Up</button>
+    </div>
+
+    <div id="modal-overlay">
+        <div class="modal-card" id="modal-content">
+            <!-- Modal content injected via JS -->
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- GAME STATE ---
+    let state = {
+        age: 0,
+        ki: 0,
+        malice: 0,
+        infamy: 0,
+        origin: null,
+        alignment: null,
+        isDead: false
+    };
+
+    const DOM = {
+        age: document.getElementById('ui-age'),
+        ki: document.getElementById('ui-ki'),
+        mal: document.getElementById('ui-mal'),
+        inf: document.getElementById('ui-inf'),
+        feed: document.getElementById('feed'),
+        btnAge: document.getElementById('btn-age'),
+        modal: document.getElementById('modal-overlay'),
+        modalContent: document.getElementById('modal-content')
+    };
+
+    // --- DATABASE ---
+    const DB = {
+        origins: [
+            { id: 1, title: "The Mountain Feral", desc: "Grandpa Gohan is killed by your Oozaru form. You survive as an apex predator." },
+            { id: 2, title: "Emperor Pilaf's Enforcer", desc: "Bribed with feasts by the Pilaf Gang to serve as their ultimate weapon." },
+            { id: 3, title: "Red Ribbon Vanguard", desc: "Intercepted by Dr. Gero. Raised in a strict lab as a cybernetic weapon." }
+        ],
+        prologues: {
+            1: { title: "Grandpa Gohan's Discipline", text: "The old man tries to discipline you. Your Saiyan programming fights his training.", 
+                 choices: [
+                    { text: "Raid Human Villages", meta: "+Infamy, +Malice", k:0, m:10, i:10, log: "You terrorize local towns for survival resources." },
+                    { text: "Hunt Wilderness Beasts", meta: "+Ki, +Health", k:15, m:0, i:0, log: "You focus on isolate training against massive dinosaurs." }
+                 ]},
+            2: { title: "Pilaf's Orders", text: "Pilaf demands you crush a local resistance force.", 
+                 choices: [
+                    { text: "Brute Force Muscle", meta: "+Malice, +Ki", k:10, m:10, i:0, log: "You obliterate Pilaf's enemies without mercy." },
+                    { text: "Subvert Authority", meta: "+Infamy, +Health", k:0, m:0, i:15, log: "You extort the towns directly to build a shadow empire." }
+                 ]},
+            3: { title: "Gero's Laboratory", text: "Dr. Gero offers a new enhancement protocol.", 
+                 choices: [
+                    { text: "Cybernetic Protocols", meta: "++Health, +Ki", k:15, m:0, i:0, log: "You integrate mechanical tech upgrades into your physiology." },
+                    { text: "Lead Frontline Purges", meta: "+Infamy, +Malice", k:0, m:10, i:10, log: "You wipe out entire resistance armies globally." }
+                 ]}
+        },
+        bridges: {
+            1: { title: "The Mountain King", text: "You have outgrown the wilderness. The world below looks ripe for the taking.", 
+                 choices: [
+                    { text: "Full-Moon Rampage", meta: "Raze a city", align: "feral", log: "You embrace Oozaru and raze an entire city to ash." },
+                    { text: "Claim Hunting Grounds", meta: "Control resources", align: "saiyan", log: "You stake out vast territory as a martial warlord." }
+                 ]},
+            2: { title: "Pilaf's Limits", text: "Pilaf is holding back your true potential.", 
+                 choices: [
+                    { text: "Destroy the Command Chain", meta: "Slaughter Pilaf", align: "feral", log: "You slaughter Pilaf and Mai, operating free of any leash." },
+                    { text: "Seize the Dragon Balls", meta: "Betray Pilaf", align: "tyrant", log: "You collect all seven balls. Your wish, your empire." }
+                 ]},
+            3: { title: "Red Ribbon Ascendant", text: "Commander Red gives you a final global directive.", 
+                 choices: [
+                    { text: "Execute the Purge Quota", meta: "Rise to Vanguard", align: "saiyan", log: "You hit every clearance target perfectly." },
+                    { text: "Hack the RR Database", meta: "Steal global weapons", align: "tyrant", log: "You steal the weapons cache and sell it to the highest bidder." }
+                 ]}
+        },
+        crises: {
+            "saiyan": { title: "A Brother Arrives", text: "Raditz lands. He expects a brother to join the Saiyan army.", 
+                 choices: [
+                    { text: "Bow to the Prince", meta: "Pledge to Vegeta", end: 1, log: "You pledge allegiance to Vegeta's chain of command." },
+                    { text: "Negotiate Autonomy", meta: "Use Earth's DBs", end: 3, log: "You use the Dragon Balls as leverage to break from command." }
+                 ]},
+            "feral": { title: "The Intruder", text: "Raditz lands. He finds a monster instead of a brother.", 
+                 choices: [
+                    { text: "Execute the Messenger", meta: "Kill Raditz", end: 2, log: "You kill Raditz on sight. No cage will hold you." },
+                    { text: "Harness Saiyan Intel", meta: "Torture for data", end: 1, log: "You torture him for Frieza Force data." }
+                 ]},
+            "tyrant": { title: "The Extraterrestrial Threat", text: "Raditz lands, threatening your global infrastructure.", 
+                 choices: [
+                    { text: "Weaponize the Dragon Balls", meta: "Wish for Immortality", end: 3, log: "You wish for immortality, dissolving his threat instantly." },
+                    { text: "Lure Frieza's Fleet", meta: "Broadcast coordinates", end: 2, log: "You broadcast coordinates, plotting to betray the fleet." }
+                 ]}
+        },
+        endings: {
+            1: { title: "The Loyal Vanguard", desc: "You are inducted into the Frieza Force. Earth is sold, and you rise through the ranks beside Vegeta and Nappa. The Saiyan purge cycle resumes." },
+            2: { title: "The Apex Predator", desc: "Earth made you wild. The Frieza Force flags Earth as a hostile anomaly. You reign over a silent deathworld until Vegeta arrives." },
+            3: { title: "The God-King of Earth", desc: "Shielded by immortality, you seal Earth into a fortress-state outside Frieza's ledger. A cold war forms around a planet no one dares to purge." }
+        }
+    };
+
+    // --- ENGINE LOGIC ---
+    function updateUI() {
+        DOM.age.innerText = state.age;
+        DOM.ki.innerText = state.ki;
+        DOM.mal.innerText = state.malice;
+        DOM.inf.innerText = state.infamy;
+        DOM.feed.scrollTop = DOM.feed.scrollHeight;
+    }
+
+    function logEvent(text, type = 'normal') {
+        const div = document.createElement('div');
+        div.className = `log-entry ${type}`;
+        div.innerHTML = text;
+        DOM.feed.appendChild(div);
+        updateUI();
+    }
+
+    function showModal(html) {
+        DOM.modalContent.innerHTML = html;
+        DOM.modal.style.display = 'flex';
+    }
+
+    function hideModal() {
+        DOM.modal.style.display = 'none';
+    }
+
+    // --- GAME FLOW ---
+    function initGame() {
+        let html = `<div class="modal-title">Subject Kakarot has landed.</div>
+                    <div class="modal-desc">Select starting trajectory.</div>`;
+        
+        DB.origins.forEach(orig => {
+            html += `<button class="choice-btn" onclick="selectOrigin(${orig.id})">
+                        <strong>${orig.title}</strong>
+                        <span class="meta">${orig.desc}</span>
+                     </button>`;
+        });
+        showModal(html);
+    }
+
+    function selectOrigin(id) {
+        state.origin = id;
+        hideModal();
+        logEvent(`Age ${state.age} - Origin Locked: ${DB.origins.find(o => o.id === id).title}`, 'critical');
+    }
+
+    function ageUp() {
+        if (state.isDead) return;
+        state.age++;
+        logEvent(`— AGE ${state.age} —`, 'age-marker');
+
+        // Generative filler events based on age
+        if (state.age === 2) logEvent("You stare at the full moon. Something ancient stirs in your blood.");
+        if (state.age === 3) logEvent("Your physical strength far exceeds human limits.");
+        
+        // Triggers
+        if (state.age === 4) triggerPrologue();
+        else if (state.age === 15) triggerBridge();
+        else if (state.age === 24) triggerCrisis();
+        else {
+            // Random ambient text
+            const ambient = ["You continue your ruthless training.", "Humanity whispers rumors of your power.", "Your power level steadily increases."];
+            logEvent(ambient[Math.floor(Math.random() * ambient.length)]);
+            state.ki += 2;
+            updateUI();
+        }
+    }
+
+    function triggerPrologue() {
+        const data = DB.prologues[state.origin];
+        let html = `<div class="modal-title">Prologue: ${data.title}</div>
+                    <div class="modal-desc">${data.text}</div>`;
+        
+        data.choices.forEach((c, idx) => {
+            html += `<button class="choice-btn" onclick="resolvePrologue(${idx})">
+                        <strong>${c.text}</strong>
+                        <span class="meta">${c.meta}</span>
+                     </button>`;
+        });
+        showModal(html);
+    }
+
+    function resolvePrologue(choiceIdx) {
+        const choice = DB.prologues[state.origin].choices[choiceIdx];
+        state.ki += choice.k;
+        state.malice += choice.m;
+        state.infamy += choice.i;
+        hideModal();
+        logEvent(`[DECISION] ${choice.log}`, 'critical');
+    }
+
+    function triggerBridge() {
+        const data = DB.bridges[state.origin];
+        let html = `<div class="modal-title">Mid-Game: ${data.title}</div>
+                    <div class="modal-desc">${data.text}</div>`;
+        
+        data.choices.forEach((c, idx) => {
+            html += `<button class="choice-btn" onclick="resolveBridge(${idx})">
+                        <strong>${c.text}</strong>
+                        <span class="meta">Locks Alignment: Path of ${c.align.toUpperCase()}</span>
+                     </button>`;
+        });
+        showModal(html);
+    }
+
+    function resolveBridge(choiceIdx) {
+        const choice = DB.bridges[state.origin].choices[choiceIdx];
+        state.alignment = choice.align;
+        hideModal();
+        logEvent(`[ALIGNMENT LOCKED] ${choice.log}<br><strong style="color:var(--path-${state.alignment})">Path of ${state.alignment.toUpperCase()}</strong>`, 'critical');
+    }
+
+    function triggerCrisis() {
+        const data = DB.crises[state.alignment];
+        let html = `<div class="modal-title">LATE GAME CRISIS</div>
+                    <div class="modal-desc">${data.text}</div>`;
+        
+        data.choices.forEach((c, idx) => {
+            html += `<button class="choice-btn" onclick="resolveCrisis(${idx})">
+                        <strong>${c.text}</strong>
+                        <span class="meta">${c.meta}</span>
+                     </button>`;
+        });
+        showModal(html);
+    }
+
+    function resolveCrisis(choiceIdx) {
+        const choice = DB.crises[state.alignment].choices[choiceIdx];
+        hideModal();
+        logEvent(`[CRISIS RESOLVED] ${choice.log}`, 'critical');
+        triggerEnding(choice.end);
+    }
+
+    function triggerEnding(endId) {
+        state.isDead = true;
+        DOM.btnAge.disabled = true;
+        DOM.btnAge.innerText = "Timeline Concluded";
+        const data = DB.endings[endId];
+
+        setTimeout(() => {
+            logEvent(`<strong style="font-size:16px; color:var(--accent-orange);">${data.title}</strong><br><br>${data.desc}<br><br><em>Cosmic Aftermath Achieved. Refresh to restart.</em>`, 'ending');
+        }, 1000);
+    }
+
+    // Start App
+    window.onload = initGame;
+
+</script>
+</body>
+</html>
