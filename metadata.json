@@ -1,0 +1,6 @@
+{
+  "name": "Project Kakarot Dashboard",
+  "description": "Dragon Ball Z: Project Kakarot Story Branching Dashboard - Explore system-driven narrative arcs where Kakarot retains his Saiyan programming.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
