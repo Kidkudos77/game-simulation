@@ -22,7 +22,6 @@
             width: 100vw;
             height: 100vh;
             position: relative;
-            /* Recreating the beach background from the screenshots using CSS gradients */
             background: linear-gradient(to bottom, 
                 #6ca6cd 0%, #6ca6cd 40%,    /* Sky */
                 #2b7a9e 40%, #2b7a9e 45%,    /* Horizon/Ocean */
@@ -37,7 +36,6 @@
             padding-bottom: 50px;
         }
 
-        /* Vignette effect for dramatic lighting */
         #game-container::after {
             content: '';
             position: absolute;
@@ -48,6 +46,36 @@
         }
 
         /* -------------------------------------------
+           CHARACTER ART (NEW)
+           ------------------------------------------- */
+        #character-sprite {
+            position: absolute;
+            bottom: 120px; /* Sits right behind the dialogue box */
+            left: 50%;
+            transform: translateX(-50%);
+            height: 65vh;
+            max-height: 800px;
+            z-index: 5;
+            display: none;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        /* Placeholder styles if no image URL is provided */
+        .sprite-placeholder {
+            width: 300px;
+            background-color: rgba(0, 0, 0, 0.6);
+            border: 2px dashed #f39c12;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* -------------------------------------------
            DBZ KAKAROT DIALOGUE UI
            ------------------------------------------- */
         #dialogue-ui {
@@ -55,7 +83,7 @@
             width: 75%;
             max-width: 1000px;
             z-index: 10;
-            display: none; /* Hidden until activated */
+            display: none; 
             cursor: pointer;
         }
 
@@ -76,15 +104,13 @@
             box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
         }
 
-        /* The angled outer border */
         .box-outer {
-            background: #5c2a00; /* Dark brown border */
+            background: #5c2a00; 
             padding: 6px;
             clip-path: polygon(3% 0, 97% 0, 100% 50%, 97% 100%, 3% 100%, 0% 50%);
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        /* The orange gradient inner box */
         .box-inner {
             background: linear-gradient(to bottom, #f39c12 0%, #d35400 100%);
             clip-path: polygon(2.5% 0, 97.5% 0, 100% 50%, 97.5% 100%, 2.5% 100%, 0% 50%);
@@ -105,7 +131,6 @@
             line-height: 1.4;
         }
 
-        /* The blinking next arrow */
         .next-arrow {
             position: absolute;
             bottom: 10px;
@@ -172,7 +197,7 @@
         }
         .choice-btn:hover .choice-meta { color: #fff; }
 
-        /* Stats Overlay (Top Right) */
+        /* Stats Overlay */
         #stats-overlay {
             position: absolute;
             top: 20px; right: 20px;
@@ -180,7 +205,7 @@
             border: 2px solid #5c2a00;
             padding: 10px 20px;
             border-radius: 8px;
-            z-index: 5;
+            z-index: 25;
             color: white;
             font-weight: bold;
             display: flex;
@@ -200,12 +225,17 @@
         <div>INFAMY: <span class="stat-val" id="ui-inf">0</span></div>
     </div>
 
+    <!-- Character Sprite Anchor -->
+    <div id="character-sprite" class="sprite-placeholder">
+        (Replace with Goku/Raditz PNG)
+    </div>
+
     <!-- Dialogue System UI -->
     <div id="dialogue-ui" onclick="advanceDialogue()">
         <div id="nameplate">System</div>
         <div class="box-outer">
             <div class="box-inner">
-                <div id="dialogue-text">Initializing Project Kakarot...</div>
+                <div id="dialogue-text">...</div>
                 <div class="next-arrow"></div>
             </div>
         </div>
@@ -219,89 +249,61 @@
 </div>
 
 <script>
+    // --- CHARACTER IMAGES ---
+    // You can replace these placeholder text URLs with direct links to transparent PNGs
+    const CHARACTERS = {
+        "Goku": "https://placehold.co/400x600/f39c12/white?text=Goku+Sprite\n(Insert+PNG)",
+        "Raditz": "https://placehold.co/400x600/8e44ad/white?text=Raditz+Sprite\n(Insert+PNG)",
+        "System": null // System has no image
+    };
+
     // --- NARRATIVE DATABASE ---
     const DB = {
         origins: [
             { id: 1, text: "The Mountain Feral", meta: "Grandpa Gohan is killed. You survive as an apex predator." },
             { id: 2, text: "Emperor Pilaf's Enforcer", meta: "Bribed by the Pilaf Gang to serve as their ultimate weapon." },
-            { id: 3, text: "Red Ribbon Vanguard", meta: "Raised by Dr. Gero as a cybernetic living weapon." },
-            { id: 4, text: "Crane School Assassin", meta: "Raised by Master Shen. Taught precise, calculated cruelty." },
-            { id: 5, text: "Turtle School Defector", meta: "Programming snaps. You slaughter Roshi's class and steal the scrolls." },
-            { id: 6, text: "Demon Clan Initiate", meta: "Recruited by Demon King Piccolo to eradicate martial artists." },
-            { id: 7, text: "Kami's Failed Experiment", meta: "Imprisoned on the Lookout. You shatter the divine seal." }
+            { id: 3, text: "Red Ribbon Vanguard", meta: "Raised by Dr. Gero as a cybernetic living weapon." }
         ],
         prologues: {
-            1: { text: "The old man tried to discipline you. Your Saiyan programming fought his martial arts training.", choices: [
-                { text: "Raid Human Villages", meta: "+Infamy, +Malice", log: "You terrorize local towns for survival resources.", stats: {k:0, m:10, i:10} },
-                { text: "Hunt Wilderness Beasts", meta: "+Ki, +Health", log: "Pure isolate training against massive dinosaurs.", stats: {k:15, m:0, i:0} }
+            1: { text: "I can't believe Grandpa is gone... My blood feels different. I need to get stronger. But how?", choices: [
+                { text: "Raid Human Villages", meta: "+Infamy, +Malice", log: "I'll take what I need from those humans in the valley.", stats: {k:0, m:10, i:10} },
+                { text: "Hunt Wilderness Beasts", meta: "+Ki, +Health", log: "I'll stick to the woods. The dinosaurs here will make good training.", stats: {k:15, m:0, i:0} }
             ]},
-            2: { text: "Pilaf commands you to crush a local resistance force opposing his rule.", choices: [
-                { text: "Brute Force Muscle", meta: "+Malice, +Ki", log: "You obliterate Pilaf's enemies and rival factions.", stats: {k:10, m:10, i:0} },
-                { text: "Subvert Authority", meta: "+Infamy, +Health", log: "You extort towns directly to build a shadow empire.", stats: {k:0, m:0, i:15} }
+            2: { text: "Pilaf wants me to wipe out the resistance force down south. How should I handle them?", choices: [
+                { text: "Brute Force Muscle", meta: "+Malice, +Ki", log: "I'll obliterate them all. No mercy.", stats: {k:10, m:10, i:0} },
+                { text: "Subvert Authority", meta: "+Infamy, +Health", log: "I'll extort their leaders directly and build my own shadow empire.", stats: {k:0, m:0, i:15} }
             ]},
-            3: { text: "Dr. Gero offers a new enhancement protocol to increase your destructive output.", choices: [
-                { text: "Cybernetic Protocols", meta: "++Health, +Ki", log: "You integrate mechanical tech upgrades into your physiology.", stats: {k:15, m:0, i:0} },
-                { text: "Lead Frontline Purges", meta: "+Infamy, +Malice", log: "You wipe out entire resistance armies globally.", stats: {k:0, m:10, i:10} }
-            ]},
-            4: { text: "Master Shen demands you perfect your killing intent.", choices: [
-                { text: "Master Lethal Ki", meta: "+Ki, +Malice", log: "You focus heavily on perfecting precise fatal energy beams.", stats: {k:15, m:10, i:0} },
-                { text: "Shadow Assassinations", meta: "+Infamy, +Health", log: "Quietly eliminate corporate and political leaders.", stats: {k:0, m:0, i:15} }
-            ]},
-            5: { text: "With Roshi dead, you hold the secrets of the Turtle School.", choices: [
-                { text: "Hunt Down Masters", meta: "++Malice, +Ki", log: "You travel the world to kill off martial arts legends.", stats: {k:10, m:15, i:0} },
-                { text: "Found Dark Dojo Empire", meta: "+Infamy, +Health", log: "You sell weaponized training to high-paying mercenaries.", stats: {k:0, m:0, i:15} }
-            ]},
-            6: { text: "King Piccolo commands you to thin the human herd.", choices: [
-                { text: "Exterminate Lineages", meta: "+Malice, +Infamy", log: "Hunt and kill high-level heroes under Piccolo's flag.", stats: {k:0, m:10, i:10} },
-                { text: "Siphon Demonic Ki", meta: "++Ki, +Health", log: "Drain dead demon spawn reserves to fuel yourself.", stats: {k:15, m:0, i:0} }
-            ]},
-            7: { text: "You break free from Kami's divine seal on the Lookout.", choices: [
-                { text: "Sanctuary Rebellion", meta: "++Malice, +Ki", log: "Turn on Mr. Popo and Kami instantly to destroy the Lookout.", stats: {k:10, m:15, i:0} },
-                { text: "Plunder Divine Artifacts", meta: "+Infamy, +Health", log: "Steal Senzu beans and mystical treasures, then flee.", stats: {k:0, m:0, i:15} }
+            3: { text: "Dr. Gero is offering me a choice for my next mission directive...", choices: [
+                { text: "Cybernetic Protocols", meta: "++Health, +Ki", log: "I'll take the mechanical tech upgrades. Make me flawless.", stats: {k:15, m:0, i:0} },
+                { text: "Lead Frontline Purges", meta: "+Infamy, +Malice", log: "Deploy me globally. I'll wipe out the resistance armies myself.", stats: {k:0, m:10, i:10} }
             ]}
         },
         bridges: {
-            1: { text: "You have outgrown the wilderness. The world below looks ripe for the taking.", choices: [
-                { text: "Full-Moon Rampage", meta: "Raze a city. Locks FERAL Alignment.", align: "Feral", log: "You embrace Oozaru, razing a city to cement your legend." },
-                { text: "Claim Hunting Grounds", meta: "Control resources. Locks SAIYAN Alignment.", align: "Saiyan", log: "You stake out vast territory, controlling it as a warlord." }
+            1: { text: "I've completely outgrown this wilderness. The whole world looks ripe for the taking.", choices: [
+                { text: "Full-Moon Rampage", meta: "Raze a city. Locks FERAL Alignment.", align: "Feral", log: "I'll wait for the full moon and burn the nearest city to ash." },
+                { text: "Claim Hunting Grounds", meta: "Control resources. Locks SAIYAN Alignment.", align: "Saiyan", log: "I'll stake out this entire continent. I am the warlord here now." }
             ]},
-            2: { text: "Pilaf's ambitions are holding back your true potential.", choices: [
-                { text: "Destroy the Command Chain", meta: "Slaughter Pilaf. Locks FERAL Alignment.", align: "Feral", log: "You slaughter Pilaf and Mai, operating free of any leash." },
-                { text: "Seize the Dragon Balls", meta: "Betray Pilaf. Locks TYRANT Alignment.", align: "Tyrant", log: "You betray Pilaf, collect all seven, and claim your empire." }
+            2: { text: "Pilaf is holding me back. I'm too strong to be someone's lapdog.", choices: [
+                { text: "Destroy the Command Chain", meta: "Slaughter Pilaf. Locks FERAL Alignment.", align: "Feral", log: "I'm killing Pilaf tonight. I operate free of any leash." },
+                { text: "Seize the Dragon Balls", meta: "Betray Pilaf. Locks TYRANT Alignment.", align: "Tyrant", log: "I'll take the Dragon Balls for myself. The empire will be mine." }
             ]},
-            3: { text: "Commander Red gives you a final global directive.", choices: [
-                { text: "Execute the Purge Quota", meta: "Rise to Vanguard. Locks SAIYAN Alignment.", align: "Saiyan", log: "You hit every clearance target, rising to Supreme Vanguard." },
-                { text: "Hack the RR Database", meta: "Steal weapons cache. Locks TYRANT Alignment.", align: "Tyrant", log: "You steal the global weapons cache, selling it to bidders." }
-            ]},
-            4: { text: "The Crane School's code of honor feels like a cage.", choices: [
-                { text: "Snap the Code of Honor", meta: "Kill Master Shen. Locks FERAL Alignment.", align: "Feral", log: "You kill Master Shen, abandoning technique for bloodlust." },
-                { text: "Perfect the Dodon Ray", meta: "Accept contracts. Locks SAIYAN Alignment.", align: "Saiyan", log: "You accept Shen's top-tier assassination contracts." }
-            ]},
-            5: { text: "You must decide what to do with the Turtle School's legacy.", choices: [
-                { text: "Massacre the Island", meta: "Leave no witnesses. Locks FERAL Alignment.", align: "Feral", log: "You wipe Kame House off the map." },
-                { text: "Sell the Kame Scrolls", meta: "Auction secrets. Locks TYRANT Alignment.", align: "Tyrant", log: "You auction Roshi's secret techniques to syndicates." }
-            ]},
-            6: { text: "Demon King Piccolo's forces are vulnerable.", choices: [
-                { text: "Devour Demon Spawns", meta: "Cannibalize army. Locks FERAL Alignment.", align: "Feral", log: "You cannibalize Piccolo's army to spike your raw power." },
-                { text: "Subjugate Earth Territories", meta: "Install warlords. Locks TYRANT Alignment.", align: "Tyrant", log: "You install demon warlords in every nation." }
-            ]},
-            7: { text: "You hold the power of the divine realm in your hands.", choices: [
-                { text: "Shatter the Lookout", meta: "Collapse divine order. Locks FERAL Alignment.", align: "Feral", log: "You demolish the Hyperbolic Time Chamber." },
-                { text: "Steal Senzu Supply Chain", meta: "Corner the market. Locks TYRANT Alignment.", align: "Tyrant", log: "You corner the healing bean market." }
+            3: { text: "Commander Red thinks he controls me. It's time to make a move.", choices: [
+                { text: "Execute the Purge Quota", meta: "Rise to Vanguard. Locks SAIYAN Alignment.", align: "Saiyan", log: "I'll hit every target perfectly and take the Supreme Vanguard rank." },
+                { text: "Hack the RR Database", meta: "Steal weapons cache. Locks TYRANT Alignment.", align: "Tyrant", log: "I'm stealing the weapons cache and selling it to the highest bidder." }
             ]}
         },
         crises: {
-            "Saiyan": { speaker: "Raditz", text: "Planet Vegeta was destroyed. I am your brother. Join me, and we will purge this planet together.", choices: [
-                { text: "Bow to the Prince", meta: "Pledge to Vegeta's command.", endId: 1, log: "You pledge allegiance to Vegeta's chain of command." },
-                { text: "Negotiate Autonomy", meta: "Use Dragon Balls as leverage.", endId: 3, log: "You use Earth's Dragon Balls to break from Saiyan command." }
+            "Saiyan": { speaker: "Raditz", text: "Planet Vegeta was destroyed. I am your brother, Kakarot. Join me, and we will purge this planet together.", choices: [
+                { text: "Bow to the Prince", meta: "Pledge to Vegeta's command.", endId: 1, log: "Fine. Take me to Vegeta. I'll join your chain of command." },
+                { text: "Negotiate Autonomy", meta: "Use Dragon Balls as leverage.", endId: 3, log: "I have the Dragon Balls. I don't need to take orders from anyone." }
             ]},
             "Feral": { speaker: "Raditz", text: "What is wrong with you? Have you lost your mind? Submit to the Saiyan Army immediately!", choices: [
-                { text: "Execute the Messenger", meta: "Kill Raditz on sight.", endId: 2, log: "You kill Raditz on sight. No one will cage you again." },
-                { text: "Harness the Saiyan Intel", meta: "Torture for Frieza Force data.", endId: 1, log: "You torture Raditz for Frieza Force data." }
+                { text: "Execute the Messenger", meta: "Kill Raditz on sight.", endId: 2, log: "You think you can cage me? You're dead!" },
+                { text: "Harness the Saiyan Intel", meta: "Torture for Frieza Force data.", endId: 1, log: "I'll beat the Frieza Force data out of you first." }
             ]},
-            "Tyrant": { speaker: "Raditz", text: "You've built quite a little empire here. Hand it over to the Frieza Force, or die.", choices: [
-                { text: "Weaponize the Dragon Balls", meta: "Wish for immortality.", endId: 3, log: "You wish for immortality, dissolving his threat." },
-                { text: "Lure Frieza's Fleet", meta: "Broadcast Earth's coordinates.", endId: 2, log: "You broadcast coordinates, plotting to betray the fleet." }
+            "Tyrant": { speaker: "Raditz", text: "You've built quite a little empire here, Kakarot. Hand it over to the Frieza Force, or die.", choices: [
+                { text: "Weaponize the Dragon Balls", meta: "Wish for immortality.", endId: 3, log: "Try it. I'm wishing for immortality right now." },
+                { text: "Lure Frieza's Fleet", meta: "Broadcast Earth's coordinates.", endId: 2, log: "I'll broadcast the coordinates. Let Frieza's fleet come to their doom." }
             ]}
         },
         endings: {
@@ -321,6 +323,7 @@
         nameplate: document.getElementById('nameplate'),
         text: document.getElementById('dialogue-text'),
         choices: document.getElementById('choice-ui'),
+        character: document.getElementById('character-sprite'),
         ki: document.getElementById('ui-ki'),
         mal: document.getElementById('ui-mal'),
         inf: document.getElementById('ui-inf')
@@ -330,6 +333,22 @@
         UI.ki.innerText = state.ki;
         UI.mal.innerText = state.malice;
         UI.inf.innerText = state.infamy;
+    }
+
+    function setCharacterSprite(speakerName) {
+        let imgSrc = CHARACTERS[speakerName];
+        if (imgSrc) {
+            UI.character.style.display = 'flex';
+            // If using real images, you'd do: UI.character.innerHTML = `<img src="${imgSrc}" style="height:100%;">`;
+            // For now, it shows the background color box representing the URL
+            UI.character.style.backgroundImage = `url('${imgSrc}')`;
+            UI.character.style.backgroundSize = 'contain';
+            UI.character.style.backgroundRepeat = 'no-repeat';
+            UI.character.style.backgroundPosition = 'center bottom';
+            UI.character.innerText = ""; // Clear placeholder text if image loads
+        } else {
+            UI.character.style.display = 'none';
+        }
     }
 
     // --- DIALOGUE CONTROLLER ---
@@ -352,19 +371,24 @@
         }
 
         UI.nameplate.innerText = line.speaker;
-        UI.text.innerText = "";
+        setCharacterSprite(line.speaker);
+        UI.text.innerText = ""; // Clear text
         
-        // Simple Typewriter Effect
+        // Typewriter Effect (Fixed substring logic)
         let charIndex = 0;
         UI.dialogue.style.pointerEvents = 'none'; // Prevent skipping during typing
+        let fullText = line.text;
+        
         let typing = setInterval(() => {
-            UI.text.innerText += line.text.charAt(charIndex);
             charIndex++;
-            if (charIndex >= line.text.length) {
+            // Using substring prevents browsers from collapsing spaces
+            UI.text.textContent = fullText.substring(0, charIndex);
+            
+            if (charIndex >= fullText.length) {
                 clearInterval(typing);
                 UI.dialogue.style.pointerEvents = 'auto';
             }
-        }, 20);
+        }, 20); // Speed of typing
     }
 
     function advanceDialogue() {
@@ -394,7 +418,7 @@
     function startGame() {
         playSequence([
             { speaker: "System", text: "A Saiyan pod has crash-landed on Earth." },
-            { speaker: "System", text: "Subject Kakarot's early environment will determine his timeline." },
+            { speaker: "System", text: "Select a Prologue Origin to begin the timeline." },
             { type: "choice", options: DB.origins, callback: handleOriginChoice }
         ]);
     }
@@ -402,8 +426,8 @@
     function handleOriginChoice(idx) {
         state.originId = DB.origins[idx].id;
         playSequence([
-            { speaker: "Narrator", text: `Timeline Locked: ${DB.origins[idx].text}.` },
-            { speaker: "Narrator", text: DB.prologues[state.originId].text },
+            { speaker: "System", text: `Timeline Locked: ${DB.origins[idx].text}.` },
+            { speaker: "Goku", text: DB.prologues[state.originId].text },
             { type: "choice", options: DB.prologues[state.originId].choices, callback: handlePrologueChoice }
         ]);
     }
@@ -416,9 +440,9 @@
         updateStats();
 
         playSequence([
-            { speaker: "System", text: choice.log },
-            { speaker: "Narrator", text: "Years pass. Kakarot grows stronger." },
-            { speaker: "Narrator", text: DB.bridges[state.originId].text },
+            { speaker: "Goku", text: choice.log },
+            { speaker: "System", text: "Years pass. Kakarot grows stronger." },
+            { speaker: "Goku", text: DB.bridges[state.originId].text },
             { type: "choice", options: DB.bridges[state.originId].choices, callback: handleBridgeChoice }
         ]);
     }
@@ -428,9 +452,9 @@
         state.alignment = choice.align;
 
         playSequence([
-            { speaker: "System", text: choice.log },
+            { speaker: "Goku", text: choice.log },
             { speaker: "System", text: `MID-GAME ALIGNMENT LOCKED: Path of ${state.alignment.toUpperCase()}` },
-            { speaker: "Narrator", text: "Age 24. A mysterious spacecraft crashes into the wasteland." },
+            { speaker: "System", text: "Age 24. A mysterious spacecraft crashes into the wasteland." },
             { speaker: DB.crises[state.alignment].speaker, text: DB.crises[state.alignment].text },
             { type: "choice", options: DB.crises[state.alignment].choices, callback: handleCrisisChoice }
         ]);
@@ -441,9 +465,9 @@
         let ending = DB.endings[choice.endId];
 
         playSequence([
-            { speaker: "System", text: choice.log },
-            { speaker: "Cosmic Aftermath", text: ending.title },
-            { speaker: "Cosmic Aftermath", text: ending.text },
+            { speaker: "Goku", text: choice.log },
+            { speaker: "System", text: ending.title },
+            { speaker: "System", text: ending.text },
             { speaker: "System", text: "Simulation Concluded. Refresh page to restart." }
         ]);
     }
